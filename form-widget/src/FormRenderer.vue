@@ -1,27 +1,70 @@
 <script setup>
+import { reactive } from 'vue'
 import { FIELD_COMPONENTS } from './fields/index'
 
-defineProps({
+const props = defineProps({
   fields: {
     type: Array,
     required: true,
   },
+
   settings: {
     type: Object,
     default: () => ({}),
   },
+
+  meta: {
+    type: Object,
+    default: () => ({}),
+  },
+
+  submitUrl: {
+    type: String,
+    default: null,
+  },
 })
+
+const formState = reactive({})
+
+async function handleSubmit() {
+  if (!props.submitUrl) {
+    console.warn('[FormWidget] submitUrl not provided')
+    return
+  }
+
+  try {
+    const res = await fetch(props.submitUrl, {
+      method: props.settings?.submitMethod || 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formState),
+    })
+
+    if (!res.ok) {
+      throw new Error('Submit failed')
+    }
+
+    const data = await res.json()
+
+    console.log('[FormWidget] Submission OK:', data)
+
+  } catch (err) {
+    console.error('[FormWidget] Submission error:', err)
+  }
+}
 </script>
 
 <template>
-  <div class="sheet">
+    <form class="sheet" @submit.prevent="handleSubmit">
     <component
-    v-for="field in fields"
-    :key="field.id"
-    :is="FIELD_COMPONENTS[field.type]"
-    :field="field"
-  />
-  </div>
+      v-for="field in fields"
+      :key="field.id"
+      :is="FIELD_COMPONENTS[field.type]"
+      :field="field"
+      v-model="formState[field.name]"
+    />
+  </form>
 </template>
 <style scoped>
 .sheet {

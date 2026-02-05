@@ -86,7 +86,7 @@ const supportsRequired = computed(() =>
       </div>
 
       <!-- TEXT -->
-      <template v-if="localField.type === 'text'">
+      <template v-if="localField.type === 'text' || localField.type === 'textarea'">
         <div class="field">
           <label>Placeholder</label>
           <input
@@ -96,7 +96,7 @@ const supportsRequired = computed(() =>
           />
         </div>
 
-        <div class="field">
+        <div class="field" v-if="localField.type === 'text'">
           <label>Longitud máxima</label>
           <input
             type="number"

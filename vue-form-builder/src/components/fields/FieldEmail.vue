@@ -15,14 +15,15 @@ defineProps({
   <div class="field" :class="`mode-${renderMode}`">
     <!-- label SOLO en runtime y canvas -->
     <label v-if="renderMode !== 'palette'">
-      {{ field.label }}
+      {{ field.props?.label }}
     </label>
 
     <input
       class="input"
       type="email"
-      :placeholder="field.placeholder"
-      :required="field.required"
+      :name="field.name"
+      :placeholder="field.props.placeholder"
+      :required="field.props.required"
       :disabled="renderMode !== 'runtime'"
     />
   </div>

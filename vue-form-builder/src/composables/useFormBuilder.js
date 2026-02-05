@@ -69,6 +69,40 @@ export function useFormBuilder() {
     return store.exportForm();
   }
 
+  /**
+   * Exporta y envía a un endpoint dinámico
+   * El paquete NO asume nada del backend
+   */
+  async function exportAndSend({
+    endpoint,
+    method = 'POST',
+    headers = {},
+    transform,
+  }) {
+    if (!endpoint) {
+      throw new Error('exportAndSend: endpoint is required')
+    }
+
+    const payload = exportForm()
+    const body = transform ? transform(payload) : payload
+
+    const response = await fetch(endpoint, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers,
+      },
+      body: JSON.stringify(body),
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(error || 'Failed to export form')
+    }
+
+    return response.json()
+  }
+
   return {
     fields,
     activeField,
@@ -78,5 +112,6 @@ export function useFormBuilder() {
     updateField,
     removeField,
     exportForm,
+    exportAndSend,
   };
 }

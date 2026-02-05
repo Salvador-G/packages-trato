@@ -1,5 +1,5 @@
 <script setup>
-defineProps({
+const props = defineProps({
   field: {
     type: Object,
     required: true,
@@ -8,12 +8,13 @@ defineProps({
 </script>
 <template>
   <div class="field">
-    <label>{{ field.label }}</label>
+    <label>{{ field.props?.label }}</label>
     <input
       class="input"
       type="password"
-      :placeholder="field.placeholder"
-      :required="field.required"
+      :name="field.name"
+      :placeholder="field.props.placeholder"
+      :required="field.props.required"
     />
   </div>
 </template>

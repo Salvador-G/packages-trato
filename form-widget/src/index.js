@@ -1,6 +1,22 @@
 import { createApp } from 'vue'
 import FormRenderer from './FormRenderer.vue'
 
+async function load({ selector, brand, formKey, apiBase }) {
+  const url = `${apiBase}/public/${brand}/${formKey}/`
+
+  const res = await fetch(url)
+
+  if (!res.ok) {
+    console.error('[FormWidget] Error loading form')
+    return
+  }
+
+  const form = await res.json()
+
+  mount(selector, form)
+}
+
+
 function mount(selector, form) {
   const el = document.querySelector(selector)
 
@@ -21,7 +37,8 @@ function mount(selector, form) {
   }).mount(el)
 }
 
-// 🔑 API GLOBAL
+// API GLOBAL
 window.FormWidget = {
   mount,
+  load,
 }
