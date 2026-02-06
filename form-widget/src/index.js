@@ -2,7 +2,7 @@ import { createApp } from 'vue'
 import FormRenderer from './FormRenderer.vue'
 
 async function load({ selector, brand, formKey, apiBase }) {
-  const url = `${apiBase}/public/${brand}/${formKey}/`
+  const url = `${apiBase}/form-engine/public/${brand}/${formKey}/`
 
   const res = await fetch(url)
 
@@ -25,17 +25,20 @@ function mount(selector, form) {
     return
   }
 
-  if (!form || !Array.isArray(form.schema)) {
-    console.warn('[FormWidget] Invalid form schema')
+  const fields = form?.schema || [] 
+
+  if (!Array.isArray(fields) || !fields.length) {
+    console.warn('[FormWidget] Empty or invalid schema')
     return
   }
 
   createApp(FormRenderer, {
-    fields: form.schema,
+    fields,
     settings: form.settings || {},
     meta: form.meta || {},
   }).mount(el)
 }
+
 
 // API GLOBAL
 window.FormWidget = {
