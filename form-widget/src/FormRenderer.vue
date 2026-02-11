@@ -53,6 +53,20 @@ async function handleSubmit() {
     console.error('[FormWidget] Submission error:', err)
   }
 }
+
+function getFieldBindings(field) {
+  if (field.type === 'button') {
+    return {}
+  }
+
+  return {
+    modelValue: formState[field.name],
+    'onUpdate:modelValue': val => {
+      formState[field.name] = val
+    }
+  }
+}
+
 </script>
 
 <template>
@@ -62,7 +76,7 @@ async function handleSubmit() {
       :key="field.id"
       :is="FIELD_COMPONENTS[field.type]"
       :field="field"
-      v-model="formState[field.name]"
+      v-bind="getFieldBindings(field)"
     />
   </form>
 </template>

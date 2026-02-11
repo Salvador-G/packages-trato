@@ -12,6 +12,7 @@ defineProps({
     <button
       class="button"
       type="button"
+      :name="field.name"
       :disabled="field.disabled"
     >
       {{ field.props.text }}
