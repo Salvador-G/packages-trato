@@ -51,6 +51,11 @@ export const useFormBuilderStore = defineStore('formBuilder', {
       this.activeFieldId = null
     },
 
+    setFormName(newName) {
+      this.meta.name = newName || 'Untitled form';
+      this.touch();
+    },
+    
     /** Marca modificación */
     touch() {
       this.meta.updatedAt = new Date().toISOString()

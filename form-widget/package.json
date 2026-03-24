@@ -15,5 +15,8 @@
   },
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "vite-plugin-css-injected-by-js": "^4.0.1"
+  }
 }
