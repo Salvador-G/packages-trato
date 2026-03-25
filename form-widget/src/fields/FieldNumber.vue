@@ -4,7 +4,13 @@ defineProps({
     type: Object,
     required: true,
   },
-})
+  modelValue: { 
+    type: [String, Number],
+    default: ""
+  }
+});
+
+defineEmits(['update:modelValue']);
 </script>
 <template>
   <div class="field">
@@ -14,6 +20,8 @@ defineProps({
       type="number"
       :placeholder="field.placeholder"
       :required="field.required"
+      :value="modelValue"
+      @input="$emit('update:modelValue', $event.target.value)"
     />
   </div>
 </template>

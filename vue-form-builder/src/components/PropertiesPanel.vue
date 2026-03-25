@@ -71,6 +71,23 @@ const supportsRequired = computed(() =>
         />
       </div>
 
+      <div v-if="localField.type !== 'button'" class="field">
+        <label>Mapear al CRM como:</label>
+        <select
+          v-model="localField.props.mappedTo"
+          @change="update({ props: { mappedTo: localField.props.mappedTo } })"
+        >
+          <option value="">-- Campo personalizado --</option>
+          <option value="ruc">RUC / ID Fiscal</option>
+          <option value="razonSocial">Razón Social</option>
+          <option value="email">Correo Principal</option>
+          <option value="telefono">Teléfono</option>
+        </select>
+        <small style="color: #64748b; font-size: 11px; margin-top: 4px; display: block;">
+          Vinculará la respuesta con la ficha del cliente en Trato.
+        </small>
+      </div>
+
       <!-- Required como switch -->
       <div v-if="supportsRequired" class="field switch-field">
         <span>Campo requerido</span>
@@ -211,6 +228,13 @@ const supportsRequired = computed(() =>
   padding: 6px 8px;
   border: 1px solid #cbd5e1;
   border-radius: 4px;
+}
+
+.field select { 
+  width: 100%; 
+  padding: 6px 8px; 
+  border: 1px solid #cbd5e1; 
+  border-radius: 4px; 
 }
 
 /* SWITCH */

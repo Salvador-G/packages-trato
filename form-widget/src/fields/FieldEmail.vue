@@ -8,7 +8,13 @@ defineProps({
     type: String,
     default: "runtime", // canvas | palette | runtime
   },
+  modelValue: { 
+    type: [String, Number],
+    default: ""
+  }
 });
+
+defineEmits(['update:modelValue']);
 </script>
 
 <template>
@@ -24,6 +30,8 @@ defineProps({
       :placeholder="field.placeholder"
       :required="field.required"
       :disabled="renderMode !== 'runtime'"
+      :value="modelValue"
+      @input="$emit('update:modelValue', $event.target.value)"
     />
   </div>
 </template>
