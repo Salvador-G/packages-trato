@@ -1,55 +1,94 @@
 <script setup>
-import { computed, reactive, watch } from "vue";
+import { computed, ref, watch } from "vue";
 
 const props = defineProps({
   activeField: {
     type: Object,
     default: null,
   },
+  mappingOptions: {
+    type: Array,
+    default: () => []
+  }
 });
 
 const emit = defineEmits(["update-field"]);
 
-/**
- * Copia editable del campo activo
- */
-const localField = reactive({});
+const localField = ref({ props: {} });
 
 /**
- * Sincronización del campo activo
+ * Sincronización a prueba de balas
  */
 watch(
   () => props.activeField,
   (field) => {
-    Object.keys(localField).forEach((k) => delete localField[k]);
-
     if (field) {
-      Object.assign(localField, JSON.parse(JSON.stringify(field)));
+      // Hacemos una copia profunda segura
+      const copy = JSON.parse(JSON.stringify(field));
+      
+      // Blindaje: si el field no tiene props (como el checkbox nuevo), se lo creamos vacío
+      if (!copy.props) copy.props = {};
+
+      // Lógica especial para transformar el array del Select en texto
+      if (copy.type === 'select' && Array.isArray(copy.options)) {
+        copy.optionsText = copy.options.join('\n');
+      } else {
+        copy.optionsText = '';
+      }
+
+      // Vue actualiza toda la vista de golpe sin perder reactividad
+      localField.value = copy;
     }
   },
-  { immediate: true }
+  { immediate: true, deep: true }
 );
 
 /**
- * Emitir cambios parciales
+ * Actualiza atributos que viven dentro de "props" (label, min, max, required, etc)
+ * SIN borrar los demás atributos.
  */
-function update(changes) {
+function updateProp(key, value) {
   if (!props.activeField) return;
 
   emit("update-field", {
     id: props.activeField.id,
-    changes,
+    changes: {
+      props: {
+        ...localField.value.props,
+        [key]: value
+      }
+    },
+  });
+}
+
+/**
+ * Actualiza atributos que viven en la raíz (options)
+ */
+function updateRoot(key, value) {
+  if (!props.activeField) return;
+
+  emit("update-field", {
+    id: props.activeField.id,
+    changes: {
+      [key]: value
+    },
   });
 }
 
 const isEmpty = computed(() => !props.activeField);
 
-/**
- * Campos que soportan "required"
- */
-const supportsRequired = computed(() =>
-  ["text", "number", "select", "checkbox"].includes(localField.type)
-);
+const supportsRequired = computed(() => {
+  if (!localField.value || !localField.value.type) return false;
+  return ["text", "number", "select", "checkbox", "textarea", "email", "password"].includes(localField.value.type);
+});
+
+const supportsMapping = computed(() => {
+  if (!localField.value || !localField.value.type) return false;
+  
+  // Solo permitimos mapear campos de Texto, Correo o Listas Desplegables.
+  // Excluimos explícitamente 'number', 'button', 'checkbox', etc.
+  return ["text", "email", "select"].includes(localField.value.type);
+});
 </script>
 
 <template>
@@ -61,55 +100,54 @@ const supportsRequired = computed(() =>
     <div v-else class="panel-content">
       <h3 class="title">Propiedades del campo</h3>
 
-      <!-- Label (NO para button) -->
       <div v-if="localField.type !== 'button'" class="field">
         <label>Etiqueta</label>
         <input
           type="text"
           v-model="localField.props.label"
-          @input="update({ props: { label: localField.props.label } })"
+          @input="updateProp('label', localField.props.label)"
         />
       </div>
 
-      <div v-if="localField.type !== 'button'" class="field">
-        <label>Mapear al CRM como:</label>
+      <div v-if="supportsMapping && mappingOptions.length > 0" class="field">
+        <label>Mapear datos (Integración):</label>
         <select
           v-model="localField.props.mappedTo"
-          @change="update({ props: { mappedTo: localField.props.mappedTo } })"
+          @change="updateProp('mappedTo', localField.props.mappedTo)"
         >
           <option value="">-- Campo personalizado --</option>
-          <option value="ruc">RUC / ID Fiscal</option>
-          <option value="razonSocial">Razón Social</option>
-          <option value="email">Correo Principal</option>
-          <option value="telefono">Teléfono</option>
+          <option 
+            v-for="opt in mappingOptions" 
+            :key="opt.value" 
+            :value="opt.value"
+          >
+            {{ opt.label }}
+          </option>
         </select>
         <small style="color: #64748b; font-size: 11px; margin-top: 4px; display: block;">
-          Vinculará la respuesta con la ficha del cliente en Trato.
+          Vinculará la respuesta con el sistema externo.
         </small>
       </div>
 
-      <!-- Required como switch -->
       <div v-if="supportsRequired" class="field switch-field">
         <span>Campo requerido</span>
-
         <label class="switch">
           <input
             type="checkbox"
-            v-model="localField.required"
-            @change="update({ required: localField.required })"
+            v-model="localField.props.required"
+            @change="updateProp('required', localField.props.required)"
           />
           <span class="slider"></span>
         </label>
       </div>
 
-      <!-- TEXT -->
-      <template v-if="localField.type === 'text' || localField.type === 'textarea'">
+      <template v-if="['text', 'textarea', 'email', 'password'].includes(localField.type)">
         <div class="field">
           <label>Placeholder</label>
           <input
             type="text"
             v-model="localField.props.placeholder"
-            @input="update({ props: { placeholder: localField.props.placeholder } })"
+            @input="updateProp('placeholder', localField.props.placeholder)"
           />
         </div>
 
@@ -118,20 +156,19 @@ const supportsRequired = computed(() =>
           <input
             type="number"
             min="1"
-            v-model.number="localField.maxLength"
-            @input="update({ maxLength: localField.maxLength })"
+            v-model.number="localField.props.maxLength"
+            @input="updateProp('maxLength', localField.props.maxLength)"
           />
         </div>
       </template>
 
-      <!-- NUMBER -->
       <template v-if="localField.type === 'number'">
         <div class="field">
           <label>Mínimo</label>
           <input
             type="number"
-            v-model.number="localField.min"
-            @input="update({ min: localField.min })"
+            v-model.number="localField.props.min"
+            @input="updateProp('min', localField.props.min)"
           />
         </div>
 
@@ -139,13 +176,12 @@ const supportsRequired = computed(() =>
           <label>Máximo</label>
           <input
             type="number"
-            v-model.number="localField.max"
-            @input="update({ max: localField.max })"
+            v-model.number="localField.props.max"
+            @input="updateProp('max', localField.props.max)"
           />
         </div>
       </template>
 
-      <!-- SELECT -->
       <template v-if="localField.type === 'select'">
         <div class="field">
           <label>Opciones (una por línea)</label>
@@ -153,36 +189,32 @@ const supportsRequired = computed(() =>
             rows="5"
             v-model="localField.optionsText"
             @input="
-              update({
-                options: localField.optionsText
+              updateRoot('options', (localField.optionsText || '')
                   .split('\n')
                   .map(o => o.trim())
-                  .filter(Boolean),
-              })
+                  .filter(Boolean))
             "
           />
         </div>
       </template>
 
-      <!-- BUTTON -->
       <template v-if="localField.type === 'button'">
         <div class="field">
           <label>Texto del botón</label>
           <input
             type="text"
             v-model="localField.props.text"
-            @input="update({ props: { text: localField.props.text } })"
+            @input="updateProp('text', localField.props.text)"
           />
         </div>
 
         <div class="field switch-field">
           <span>Deshabilitado</span>
-
           <label class="switch">
             <input
               type="checkbox"
-              v-model="localField.disabled"
-              @change="update({ disabled: localField.disabled })"
+              v-model="localField.props.disabled"
+              @change="updateProp('disabled', localField.props.disabled)"
             />
             <span class="slider"></span>
           </label>
@@ -193,6 +225,7 @@ const supportsRequired = computed(() =>
 </template>
 
 <style scoped>
+/* TODO TU CSS SE MANTIENE EXACTAMENTE IGUAL AQUÍ */
 .properties-panel {
   width: 320px;
   padding: 16px;

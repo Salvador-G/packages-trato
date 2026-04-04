@@ -14,7 +14,10 @@ defineEmits(['update:modelValue']);
 </script>
 <template>
   <div class="field">
-    <label class="lbl">{{ field.label }}</label>
+    <label v-if="renderMode !== 'palette'" class="field-label">
+      {{ field.props?.label || field.label }}
+      <span v-if="field.props?.required || field.required" class="required-asterisk">*</span>
+    </label>
     <input
       class="input"
       type="number"
@@ -57,5 +60,20 @@ defineEmits(['update:modelValue']);
   pointer-events: none;
   opacity: 0.7;
   transform: scale(0.9);
+}
+
+.field-label {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: #334155;
+  display: flex; /* Para que el texto y el asterisco se alineen perfecto */
+  align-items: center;
+}
+
+.required-asterisk {
+  color: #ef4444; /* Rojo vibrante */
+  margin-left: 4px;
+  font-weight: bold;
 }
 </style>

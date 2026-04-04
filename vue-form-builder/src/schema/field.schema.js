@@ -8,6 +8,8 @@ export const FIELD_TYPES = {
   EMAIL: 'email',
   PASSWORD: 'password',
   TEXTAREA: 'textarea',
+  SELECT: 'select',
+  CHECKBOX: 'checkbox',
   BUTTON: 'button',
 }
 
@@ -28,6 +30,8 @@ export const FIELD_BASE_NAMES = {
   [FIELD_TYPES.EMAIL]: 'email',
   [FIELD_TYPES.PASSWORD]: 'password',
   [FIELD_TYPES.TEXTAREA]: 'textarea',
+  [FIELD_TYPES.SELECT]: 'select',
+  [FIELD_TYPES.CHECKBOX]: 'checkbox',
   // BUTTON no genera payload → no tiene base name
 }
 
@@ -92,6 +96,24 @@ export const FIELD_DEFINITIONS = {
       disabled: false,
     },
   },
+  [FIELD_TYPES.SELECT]: {
+    paletteLabel: 'Select',
+    // Las opciones van en la raíz del objeto, porque así lo configuraste en PropertiesPanel.vue
+    options: ['Opción 1', 'Opción 2', 'Opción 3'], 
+    props: {
+      label: 'Lista Desplegable',
+      required: false,
+      placeholder: 'Seleccione una opción...',
+    },
+  },
+  [FIELD_TYPES.CHECKBOX]: {
+    paletteLabel: 'Checkbox',
+    props: {
+      label: 'Casilla de verificación',
+      required: false,
+    },
+  }
+
 }
 
 /* =====================================================
@@ -141,24 +163,20 @@ export function createField(type, overrides = {}, fields = []) {
     throw new Error(`Unsupported field type: ${type}`)
   }
 
-  return {
+  const newField = {
     id: generateId(),
-
-    // name:
-    // - si el usuario lo define → se respeta
-    // - si no → se autogenera
-    // - botones no generan name
-    name:
-      overrides.name ??
-      (type !== FIELD_TYPES.BUTTON
-        ? generateUniqueName(type, fields)
-        : null),
-
+    name: overrides.name ?? (type !== FIELD_TYPES.BUTTON ? generateUniqueName(type, fields) : null),
     type,
-
     props: {
       ...definition.props,
-      ...overrides.props,
+      ...(overrides.props || {}),
     },
   }
+
+  // Si la definición incluye 'options' (como en el Select), lo inicializamos
+  if (definition.options) {
+    newField.options = [...definition.options]
+  }
+
+  return newField
 }
