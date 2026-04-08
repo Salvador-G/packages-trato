@@ -8,8 +8,8 @@ const props = defineProps({
   },
   mappingOptions: {
     type: Array,
-    default: () => []
-  }
+    default: () => [],
+  },
 });
 
 const emit = defineEmits(["update-field"]);
@@ -25,22 +25,22 @@ watch(
     if (field) {
       // Hacemos una copia profunda segura
       const copy = JSON.parse(JSON.stringify(field));
-      
+
       // Blindaje: si el field no tiene props (como el checkbox nuevo), se lo creamos vacío
       if (!copy.props) copy.props = {};
 
       // Lógica especial para transformar el array del Select en texto
-      if (copy.type === 'select' && Array.isArray(copy.options)) {
-        copy.optionsText = copy.options.join('\n');
+      if (copy.type === "select" && Array.isArray(copy.options)) {
+        copy.optionsText = copy.options.join("\n");
       } else {
-        copy.optionsText = '';
+        copy.optionsText = "";
       }
 
       // Vue actualiza toda la vista de golpe sin perder reactividad
       localField.value = copy;
     }
   },
-  { immediate: true, deep: true }
+  { immediate: true, deep: true },
 );
 
 /**
@@ -55,8 +55,8 @@ function updateProp(key, value) {
     changes: {
       props: {
         ...localField.value.props,
-        [key]: value
-      }
+        [key]: value,
+      },
     },
   });
 }
@@ -70,7 +70,7 @@ function updateRoot(key, value) {
   emit("update-field", {
     id: props.activeField.id,
     changes: {
-      [key]: value
+      [key]: value,
     },
   });
 }
@@ -79,12 +79,20 @@ const isEmpty = computed(() => !props.activeField);
 
 const supportsRequired = computed(() => {
   if (!localField.value || !localField.value.type) return false;
-  return ["text", "number", "select", "checkbox", "textarea", "email", "password"].includes(localField.value.type);
+  return [
+    "text",
+    "number",
+    "select",
+    "checkbox",
+    "textarea",
+    "email",
+    "password",
+  ].includes(localField.value.type);
 });
 
 const supportsMapping = computed(() => {
   if (!localField.value || !localField.value.type) return false;
-  
+
   // Solo permitimos mapear campos de Texto, Correo o Listas Desplegables.
   // Excluimos explícitamente 'number', 'button', 'checkbox', etc.
   return ["text", "email", "select"].includes(localField.value.type);
@@ -99,6 +107,19 @@ const supportsMapping = computed(() => {
 
     <div v-else class="panel-content">
       <h3 class="title">Propiedades del campo</h3>
+
+      <div class="field">
+        <label>Ancho del campo en fila</label>
+        <select
+          v-model="localField.width"
+          @change="updateRoot('width', localField.width)"
+        >
+          <option value="100">100% (Fila completa)</option>
+          <option value="50">50% (Media fila - Ej: Nombre y Apellido)</option>
+          <option value="33">33% (Un tercio)</option>
+          <option value="25">25% (Un cuarto)</option>
+        </select>
+      </div>
 
       <div v-if="localField.type !== 'button'" class="field">
         <label>Etiqueta</label>
@@ -116,15 +137,22 @@ const supportsMapping = computed(() => {
           @change="updateProp('mappedTo', localField.props.mappedTo)"
         >
           <option value="">-- Campo personalizado --</option>
-          <option 
-            v-for="opt in mappingOptions" 
-            :key="opt.value" 
+          <option
+            v-for="opt in mappingOptions"
+            :key="opt.value"
             :value="opt.value"
           >
             {{ opt.label }}
           </option>
         </select>
-        <small style="color: #64748b; font-size: 11px; margin-top: 4px; display: block;">
+        <small
+          style="
+            color: #64748b;
+            font-size: 11px;
+            margin-top: 4px;
+            display: block;
+          "
+        >
           Vinculará la respuesta con el sistema externo.
         </small>
       </div>
@@ -141,7 +169,11 @@ const supportsMapping = computed(() => {
         </label>
       </div>
 
-      <template v-if="['text', 'textarea', 'email', 'password'].includes(localField.type)">
+      <template
+        v-if="
+          ['text', 'textarea', 'email', 'password'].includes(localField.type)
+        "
+      >
         <div class="field">
           <label>Placeholder</label>
           <input
@@ -189,10 +221,13 @@ const supportsMapping = computed(() => {
             rows="5"
             v-model="localField.optionsText"
             @input="
-              updateRoot('options', (localField.optionsText || '')
+              updateRoot(
+                'options',
+                (localField.optionsText || '')
                   .split('\n')
-                  .map(o => o.trim())
-                  .filter(Boolean))
+                  .map((o) => o.trim())
+                  .filter(Boolean),
+              )
             "
           />
         </div>
@@ -263,11 +298,11 @@ const supportsMapping = computed(() => {
   border-radius: 4px;
 }
 
-.field select { 
-  width: 100%; 
-  padding: 6px 8px; 
-  border: 1px solid #cbd5e1; 
-  border-radius: 4px; 
+.field select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
 }
 
 /* SWITCH */

@@ -26,8 +26,6 @@ const props = defineProps({
 })
 
 const formState = reactive({})
-
-// ¡NUEVO! Estados para mejorar la UX (Experiencia de Usuario)
 const isSubmitting = ref(false)
 const isSuccess = ref(false)
 const errorMessage = ref('')
@@ -45,20 +43,12 @@ async function handleSubmit() {
     const finalPayload = {};
     
     props.fields.forEach(field => {
-      // Ignoramos el botón de envío
       if (field.type === 'button') return;
       
-      // La regla de oro B2B: 
-      // 1. Usa el mapeo del CRM si existe.
-      // 2. Si no, usa la pregunta real (Label) para que sea legible en el panel.
-      // 3. Si por alguna razón no hay label, usa el nombre interno (text_1).
       const mappedKey = field.props?.mappedTo || field.props?.label || field.name;
-      
-      // Asignamos la respuesta del usuario final a esta nueva llave legible
       finalPayload[mappedKey] = formState[field.name];
     });
 
-    // Envolvemos finalPayload dentro de "payload"
     const bodyData = {
       payload: finalPayload,
       source: props.source
@@ -91,11 +81,8 @@ async function handleSubmit() {
 
 function getFieldBindings(field) {
   if (field.type === 'button') {
-    // Si el botón está enviando, lo deshabilitamos para evitar doble click
     return {
       disabled: isSubmitting.value,
-      // Si quieres cambiar el texto mientras carga:
-      // text: isSubmitting.value ? 'Enviando...' : field.text
     }
   }
 
@@ -104,9 +91,16 @@ function getFieldBindings(field) {
     'onUpdate:modelValue': val => {
       formState[field.name] = val
     },
-    // Deshabilitamos inputs si se está enviando
     disabled: isSubmitting.value 
   }
+}
+
+// NUEVO: Función para calcular el ancho dinámico restando los márgenes
+function getFieldWidth(widthVal) {
+  if (widthVal === '50') return 'calc(50% - 6px)';
+  if (widthVal === '33') return 'calc(33.33% - 8px)';
+  if (widthVal === '25') return 'calc(25% - 9px)';
+  return '100%';
 }
 </script>
 
@@ -124,13 +118,18 @@ function getFieldBindings(field) {
         {{ errorMessage }}
       </div>
 
-      <component
+      <div
         v-for="field in fields"
         :key="field.id"
-        :is="FIELD_COMPONENTS[field.type]"
-        :field="field"
-        v-bind="getFieldBindings(field)"
-      />
+        class="field-wrapper"
+        :style="{ width: getFieldWidth(field.width) }"
+      >
+        <component
+          :is="FIELD_COMPONENTS[field.type]"
+          :field="field"
+          v-bind="getFieldBindings(field)"
+        />
+      </div>
     </form>
     
   </div>
@@ -150,6 +149,16 @@ function getFieldBindings(field) {
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   border: 1px solid #e5e7eb;
+
+  /* NUEVO: Habilitamos el Flex Grid */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* NUEVO: Contenedor de cada campo individual */
+.field-wrapper {
+  box-sizing: border-box;
 }
 
 .success-screen {
@@ -164,7 +173,7 @@ function getFieldBindings(field) {
 .success-icon {
   width: 64px;
   height: 64px;
-  color: #10b981; /* Verde esmeralda */
+  color: #10b981;
   margin: 0 auto 16px;
 }
 
@@ -179,12 +188,14 @@ function getFieldBindings(field) {
 }
 
 .error-banner {
+  width: 100%; /* NUEVO: Forzamos que el error ocupe toda la fila */
   background-color: #fee2e2;
   color: #b91c1c;
   padding: 12px;
   border-radius: 6px;
-  margin-bottom: 16px;
+  margin-bottom: 4px;
   font-size: 0.875rem;
   text-align: center;
+  box-sizing: border-box;
 }
 </style>
